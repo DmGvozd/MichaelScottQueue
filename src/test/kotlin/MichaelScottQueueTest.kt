@@ -44,6 +44,13 @@ class MichaelScottQueueTest {
         }
     }
 
+    @Operation
+    @Test
+    fun testDequeueFromEmptyQueue() {
+        val result = dequeue()
+        assertNull(result, "Удаление из пустой очереди должно возвращать null")
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
