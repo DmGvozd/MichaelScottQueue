@@ -51,10 +51,33 @@ class MichaelScottQueueTest {
         assertNull(result, "Удаление из пустой очереди должно возвращать null")
     }
 
+    @Operation
+    @Test
+    fun testConcurrentEnqueueDequeue() = runBlocking {
+        val queue = MichaelScottQueue<Int>(100)
+        val elementsToAdd = (1..100).toList()
+        val dequeuedElements = mutableListOf<Int>()
+
+        val enqueueJobs = elementsToAdd.map { element ->
+            launch(Dispatchers.Default) {
+                queue.enqueue(element)
+            }
+        }
+        enqueueJobs.forEach { it.join() }
+
+        val dequeueJobs = List(100) {
+            launch(Dispatchers.Default) {
+                queue.dequeue()?.let { dequeuedElements.add(it) }
+            }
+        }
+        dequeueJobs.forEach { it.join() }
+
+        assertEquals(elementsToAdd.toSet(), dequeuedElements.toSet(), "Не все элементы были исключены из очереди")
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            println("Запуск тестов")
             val options = StressOptions()
                 .actorsBefore(1)
                 .actorsAfter(1)
