@@ -75,6 +75,17 @@ class MichaelScottQueueTest {
         assertEquals(elementsToAdd.toSet(), dequeuedElements.toSet(), "Не все элементы были исключены из очереди")
     }
 
+    @Operation
+    @Test
+    fun testQueueOverflow() {
+        val queue = MichaelScottQueue<Int>(10)
+        for (i in 0 until 10) {
+            queue.enqueue(i)
+        }
+        val result = queue.enqueue(11)
+        assertEquals(false, result, "Очередь заполнена, но все еще есть возможность добавить в нее элемент")
+    }
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
