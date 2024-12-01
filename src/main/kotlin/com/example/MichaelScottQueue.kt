@@ -1,25 +1,17 @@
 package com.example
 
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 class MichaelScottQueue<T>(private val capacity: Int) {
-    private val head = AtomicReference<Node<T>>(Node(null))
+
+    private val head = AtomicReference(Node<T>(null))
     private val tail = AtomicReference<Node<T>>(head.get())
-    private val size = AtomicInteger(0)
 
     private class Node<T>(val value: T?) {
         val next = AtomicReference<Node<T>?>(null)
     }
 
     fun enqueue(value: T): Boolean {
-        if (size.get() >= capacity) {
-            println("Queue is full, cannot enqueue: $value")
-            return false
-        }
-
         val newNode = Node(value)
         while (true) {
             val currentTail = tail.get()
@@ -27,9 +19,13 @@ class MichaelScottQueue<T>(private val capacity: Int) {
 
             if (currentTail === tail.get()) {
                 if (next == null) {
+                    val currentSize = getSize()
+                    if (currentSize >= capacity) {
+                        println("Queue is full, cannot enqueue: $value")
+                        return false
+                    }
                     if (currentTail.next.compareAndSet(null, newNode)) {
                         tail.compareAndSet(currentTail, newNode)
-                        size.incrementAndGet()
                         println("Enqueued: $value")
                         return true
                     }
@@ -55,10 +51,11 @@ class MichaelScottQueue<T>(private val capacity: Int) {
                     tail.compareAndSet(currentTail, next)
                 } else {
                     if (next != null) {
-                        head.compareAndSet(currentHead, next)
-                        size.decrementAndGet()
-                        println("Dequeued: ${next.value}")
-                        return next.value
+                        val value = next.value
+                        if (head.compareAndSet(currentHead, next)) {
+                            println("Dequeued: $value")
+                            return value
+                        }
                     }
                 }
             }
@@ -66,13 +63,19 @@ class MichaelScottQueue<T>(private val capacity: Int) {
     }
 
     fun getSize(): Int {
-        return size.get()
+        var count = 0
+        var current = head.get().next.get()
+        while (current != null) {
+            count++
+            current = current.next.get()
+        }
+        return count
     }
 }
 
 fun main() {
     val queue = MichaelScottQueue<Int>(1000)
-    val executor = Executors.newFixedThreadPool(16)
+    val executor = java.util.concurrent.Executors.newFixedThreadPool(16)
 
     for (i in 1..200) {
         executor.submit {
@@ -93,7 +96,7 @@ fun main() {
     }
 
     executor.shutdown()
-    executor.awaitTermination(1, TimeUnit.MINUTES)
+    executor.awaitTermination(1, java.util.concurrent.TimeUnit.MINUTES)
 
     println("Final queue size: ${queue.getSize()}")
 }
