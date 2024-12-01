@@ -1,5 +1,5 @@
 # MichaelScottQueue
-aka "Пояснительная записка"
+aka "Сопроводительный документ"
 
 # Запуск
 - Открыть файл [MichaelScottQueueTest.kt](src%2Ftest%2Fkotlin%2FMichaelScottQueueTest.kt) и запустить main.
